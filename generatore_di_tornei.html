@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore di Tornei Sportivi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#38bdf8',
+                            pitch: '#15803d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Teko', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @media print {
+            header, nav, #instructions-bar, button, input, textarea, select, #toast-container, footer, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+            }
+            .bg-slate-900, .bg-slate-950, .bg-slate-800 {
+                background: white !important;
+                border: 1px solid #cbd5e1 !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+            .text-white, .text-slate-100, .text-slate-200, .text-slate-300, .text-yellow-400 {
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-yellow-400 selection:text-slate-950">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-yellow-400 p-2 rounded-xl text-slate-950 font-black shadow-lg shadow-yellow-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4m6 17v-5m0 0a5 5 0 01-5-5V4a1 1 0 011-1h8a1 1 0 011 1v7a5 5 0 01-5 5zm0 0v5a2 2 0 01-2 2H9m3-2h3m-9 0H6a2 2 0 01-2-2v-3.5"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold font-display tracking-wider uppercase text-white flex items-center gap-2">
+                        GENERATORE DI TORNEI <span class="text-xs font-sans px-2 py-0.5 rounded bg-yellow-400/10 text-yellow-400 border border-yellow-400/20">SPORT PRO</span>
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center gap-2">
+                <button onclick="resetAllData()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition border border-slate-700 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Reset</span>
+                </button>
+
+                <!-- Export Dropdown -->
+                <div class="relative inline-block text-left group">
+                    <button class="px-3 py-1.5 text-xs font-medium bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold rounded-lg transition shadow-lg shadow-yellow-500/10 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Esporta / Scarica</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 z-50 hidden group-hover:block hover:block">
+                        <button onclick="exportTournamentJSON()" class="w-full text-left px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-yellow-400 flex items-center gap-2">
+                            <span class="font-mono text-yellow-400 font-bold">{ }</span> JSON (Salva Torneo)
+                        </button>
+                        <button onclick="exportTournamentCSV()" class="w-full text-left px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-yellow-400 flex items-center gap-2">
+                            <span class="font-mono text-emerald-400 font-bold">.CSV</span> Tabella Excel/CSV
+                        </button>
+                        <button onclick="exportTournamentTXT()" class="w-full text-left px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-yellow-400 flex items-center gap-2">
+                            <span class="font-mono text-sky-400 font-bold">.TXT</span> Report di Testo
+                        </button>
+                        <div class="border-t border-slate-800 my-1"></div>
+                        <button onclick="printTournamentPDF()" class="w-full text-left px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-yellow-400 flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Stampa / Salva PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <div class="bg-slate-900 border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 flex gap-2 pt-2">
+            <button id="tab-btn-1" onclick="switchStep(1)" class="px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-yellow-400 text-yellow-400 bg-slate-800/50">
+                <span class="w-5 h-5 rounded-full bg-yellow-400/20 flex items-center justify-center text-[10px]">1</span>
+                <span>Configurazione Squadre & Formato</span>
+            </button>
+            <button id="tab-btn-2" onclick="switchStep(2)" class="px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">2</span>
+                <span>Tabellone & Risultati Torneo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- STEP 1: CONFIGURAZIONE (SINISTRA: INSERIMENTI / DESTRA: LISTA + MENU) -->
+        <div id="step-1" class="step-content">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- COLONNA SINISTRA: INSERIMENTI SINGOLI, MULTIPLI E PRESET -->
+                <div class="lg:col-span-5 space-y-6">
+
+                    <!-- Inserimento Singolo e Multiplo -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+                        <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                            <h2 class="text-base font-bold text-white">Inserimento Squadre</h2>
+                        </div>
+
+                        <!-- Single Add -->
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Inserimento Singolo</label>
+                            <form onsubmit="handleAddParticipant(event)" class="flex gap-2">
+                                <input type="text" id="participant-input" placeholder="Es. Real Madrid, Inter..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 transition" required>
+                                <button type="submit" class="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-yellow-500/10 flex items-center justify-center">
+                                    + Aggiungi
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Bulk Add -->
+                        <div class="pt-3 border-t border-slate-800/80">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Inserimento Multiplo (Una per riga)</label>
+                            <textarea id="bulk-input" rows="4" placeholder="Real Madrid&#10;FC Barcelona&#10;Inter&#10;Milan" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 transition resize-none"></textarea>
+                            <button onclick="handleBulkAdd()" class="mt-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition border border-slate-700">
+                                Carica Lista Multipla
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preset Quick Add Cards -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Preset Veloci (8 / 16 / 32 Squadre)</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="loadPreset('preset8')" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-yellow-400/50 rounded-xl text-center transition group">
+                                <div class="text-xs font-bold text-yellow-400 group-hover:text-yellow-300">8 Squadre</div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Ottavi</div>
+                            </button>
+                            <button onclick="loadPreset('preset16')" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-yellow-400/50 rounded-xl text-center transition group">
+                                <div class="text-xs font-bold text-yellow-400 group-hover:text-yellow-300">16 Squadre</div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Champions</div>
+                            </button>
+                            <button onclick="loadPreset('preset32')" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-yellow-400/50 rounded-xl text-center transition group">
+                                <div class="text-xs font-bold text-yellow-400 group-hover:text-yellow-300">32 Squadre</div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">Mondiale</div>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- COLONNA DESTRA: LISTA SQUADRE (ALTO) + MENU FORMATO TORNEO (BASSO) -->
+                <div class="lg:col-span-7 space-y-6">
+
+                    <!-- ALTO DESTRA: LISTA SQUADRE ISCRITTE -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[320px]">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-white">Lista Squadre Iscritte</h2>
+                                <span id="participant-count-badge" class="px-2.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400 font-mono text-xs font-bold border border-yellow-400/20">0 Squadre</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="shuffleParticipants()" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-1">
+                                    🔀 Mescola
+                                </button>
+                                <button onclick="clearAllParticipants()" class="px-2.5 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition border border-red-500/20">
+                                    🗑️ Svuota
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Container Lista Scrollabile -->
+                        <div id="participants-container" class="flex-1 overflow-y-auto pr-1">
+                            <ul id="participants-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <!-- Popolato dinamicamente da JS -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- BASSO DESTRA: MENU FORMATO & AVVIO TORNEO -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+                        <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                            <h2 class="text-base font-bold text-white">Menù Tipologia Torneo</h2>
+                        </div>
+
+                        <!-- Scelta Formato -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" onclick="setFormat('elimination')" id="fmt-elimination" class="p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-yellow-400 bg-yellow-400/10 text-white">
+                                <span class="text-2xl">🏆</span>
+                                <div>
+                                    <div class="font-bold text-xs uppercase text-yellow-400">Eliminazione Diretta</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Scontri diretti ad eliminazione fino alla finale</div>
+                                </div>
+                            </button>
+                            <button type="button" onclick="setFormat('groups')" id="fmt-groups" class="p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700">
+                                <span class="text-2xl">⚽</span>
+                                <div>
+                                    <div class="font-bold text-xs uppercase">Fase a Gironi</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Gironi all'italiana con passaggio del turno</div>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- Opzioni Opzionali per Gironi -->
+                        <div id="group-settings-box" class="hidden p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">Numero di Gironi</label>
+                                    <select id="select-num-groups" onchange="state.numGroups = parseInt(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400">
+                                        <option value="2">2 Gironi</option>
+                                        <option value="4">4 Gironi</option>
+                                        <option value="8">8 Gironi</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">Qualificate per Girone</label>
+                                    <select id="select-advancing" onchange="state.advancingPerGroup = parseInt(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400">
+                                        <option value="1">Prima classificata (1)</option>
+                                        <option value="2" selected>Primi 2 per girone (2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pulsante Generazione Torneo -->
+                        <button onclick="generateTournament()" id="btn-generate" class="w-full py-4 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg shadow-yellow-500/20 uppercase tracking-wider flex items-center justify-center gap-2">
+                            <span>🚀 CREA E AVVIA TORNEO</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- STEP 2: TABELLONE & RISULTATI TORNEO -->
+        <div id="step-2" class="step-content hidden space-y-6">
+            
+            <!-- Controls Sub Tabs -->
+            <div id="subtab-bar" class="flex items-center justify-between bg-slate-900 p-2 rounded-xl border border-slate-800">
+                <div class="flex gap-2">
+                    <button id="subtab-groups-btn" onclick="switchSubTab('groups')" class="px-4 py-2 text-xs font-bold rounded-lg transition bg-yellow-400 text-slate-950">
+                        ⚽ Classifiche Gironi & Partite
+                    </button>
+                    <button id="subtab-bracket-btn" onclick="switchSubTab('bracket')" class="px-4 py-2 text-xs font-bold rounded-lg transition bg-slate-800 text-slate-300">
+                        🏆 Tabellone Eliminazione Diretta
+                    </button>
+                </div>
+                <div id="qualifier-action-container" class="hidden">
+                    <button onclick="advanceGroupsToBracket()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                        <span>Genera Tabellone dai Qualificati ➔</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 1: GIRONI -->
+            <div id="view-groups" class="space-y-6">
+                <div id="groups-grid-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: TABELLONE ELIMINAZIONE DIRETTA -->
+            <div id="view-bracket" class="hidden overflow-x-auto pb-6">
+                <div id="bracket-container" class="min-w-[800px] flex gap-8 items-stretch py-4">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>Generatore di Tornei Sportivi &copy; 2026</div>
+            <div class="flex gap-4">
+                <button onclick="switchStep(1)" class="hover:underline text-slate-400">Partecipanti</button>
+                <button onclick="switchStep(2)" class="hover:underline text-slate-400">Formato</button>
+                <button onclick="exportTournamentJSON()" class="hover:underline text-slate-400">Salva Stato</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- APP JAVASCRIPT LOGIC -->
+    <script>
+        // --- GLOBAL STATE ---
+        let state = {
+            step: 1,
+            participants: ['Real Madrid', 'FC Barcelona', 'Inter', 'Milan', 'Juventus', 'Bayern München', 'PSG', 'Manchester City'],
+            format: 'elimination',
+            numGroups: 2,
+            advancingPerGroup: 2,
+            groups: [],
+            bracket: [],
+            activeSubTab: 'bracket',
+            champion: null
+        };
+
+        const PRESETS = {
+            preset8: ['Real Madrid', 'FC Barcelona', 'Inter', 'Milan', 'Juventus', 'Bayern München', 'PSG', 'Manchester City'],
+            preset16: [
+                'Real Madrid', 'FC Barcelona', 'Inter', 'Milan',
+                'Juventus', 'Bayern München', 'PSG', 'Manchester City',
+                'Arsenal', 'Liverpool', 'Chelsea', 'Borussia Dortmund',
+                'Atletico Madrid', 'Napoli', 'Roma', 'Ajax'
+            ],
+            preset32: [
+                'Real Madrid', 'FC Barcelona', 'Inter', 'Milan', 'Juventus', 'Bayern München', 'PSG', 'Manchester City',
+                'Arsenal', 'Liverpool', 'Chelsea', 'Borussia Dortmund', 'Atletico Madrid', 'Napoli', 'Roma', 'Ajax',
+                'Benfica', 'Porto', 'Sporting CP', 'Feyenoord', 'PSV Eindhoven', 'Lazio', 'Atalanta', 'Fiorentina',
+                'Marseille', 'Lyon', 'Monaco', 'Bayer Leverkusen', 'RB Leipzig', 'Villarreal', 'Sevilla', 'Real Sociedad'
+            ]
+        };
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderParticipants();
+            updateStepUI();
+        });
+
+        // --- PARTECPANTS MANAGEMENT ---
+        function renderParticipants() {
+            const listEl = document.getElementById('participants-list');
+            const countBadge = document.getElementById('participant-count-badge');
+            
+            listEl.innerHTML = '';
+            countBadge.innerText = `${state.participants.length} Squadre`;
+
+            if (state.participants.length === 0) {
+                listEl.innerHTML = `
+                    <li class="col-span-2 py-8 text-center text-slate-500 text-xs italic bg-slate-950/50 rounded-xl border border-dashed border-slate-800">
+                        Nessuna squadra inserita. Aggiungi squadre dalla colonna a sinistra.
+                    </li>
+                `;
+                return;
+            }
+
+            state.participants.forEach((name, idx) => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition group';
+                li.innerHTML = `
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="w-5 h-5 rounded-md bg-slate-800 text-slate-400 font-mono text-[10px] flex items-center justify-center font-bold flex-shrink-0">${idx + 1}</span>
+                        <span class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(name)}</span>
+                    </div>
+                    <button onclick="removeParticipant(${idx})" class="p-1 text-slate-500 hover:text-red-400 opacity-80 group-hover:opacity-100 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function handleAddParticipant(event) {
+            event.preventDefault();
+            const input = document.getElementById('participant-input');
+            const val = input.value.trim();
+            if (val) {
+                state.participants.push(val);
+                input.value = '';
+                renderParticipants();
+                showToast(`Squadra "${val}" aggiunta!`, 'success');
+            }
+        }
+
+        function handleBulkAdd() {
+            const textarea = document.getElementById('bulk-input');
+            const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length > 0) {
+                state.participants.push(...lines);
+                textarea.value = '';
+                renderParticipants();
+                showToast(`Aggiunte ${lines.length} squadre!`, 'success');
+            }
+        }
+
+        function loadPreset(key) {
+            if (PRESETS[key]) {
+                state.participants = [...PRESETS[key]];
+                renderParticipants();
+                showToast(`Preset caricate: ${PRESETS[key].length} Squadre!`, 'success');
+            }
+        }
+
+        function removeParticipant(index) {
+            const removed = state.participants.splice(index, 1);
+            renderParticipants();
+            showToast(`Rimossa squadra "${removed}"`, 'info');
+        }
+
+        function clearAllParticipants() {
+            if (state.participants.length === 0) return;
+            state.participants = [];
+            renderParticipants();
+            showToast('Tutte le squadre sono state rimosse.', 'info');
+        }
+
+        function shuffleParticipants() {
+            if (state.participants.length < 2) return;
+            for (let i = state.participants.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [state.participants[i], state.participants[j]] = [state.participants[j], state.participants[i]];
+            }
+            renderParticipants();
+            showToast('Lista squadre mescolata!', 'info');
+        }
+
+        // --- FORMAT SELECTOR ---
+        function setFormat(fmt) {
+            state.format = fmt;
+            const btnElim = document.getElementById('fmt-elimination');
+            const btnGrp = document.getElementById('fmt-groups');
+            const settingsBox = document.getElementById('group-settings-box');
+
+            if (fmt === 'elimination') {
+                btnElim.className = 'p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-yellow-400 bg-yellow-400/10 text-white';
+                btnGrp.className = 'p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700';
+                settingsBox.classList.add('hidden');
+            } else {
+                btnGrp.className = 'p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-yellow-400 bg-yellow-400/10 text-white';
+                btnElim.className = 'p-3.5 rounded-xl border text-left transition flex items-start gap-3 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700';
+                settingsBox.classList.remove('hidden');
+            }
+        }
+
+        // --- STEP SWITCHING ---
+        function switchStep(stepNum) {
+            state.step = stepNum;
+            updateStepUI();
+        }
+
+        function updateStepUI() {
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            const tabBtn1 = document.getElementById('tab-btn-1');
+            const tabBtn2 = document.getElementById('tab-btn-2');
+
+            if (state.step === 1) {
+                step1.classList.remove('hidden');
+                step2.classList.add('hidden');
+                tabBtn1.className = 'px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-yellow-400 text-yellow-400 bg-slate-800/50';
+                tabBtn2.className = 'px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+            } else {
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+                tabBtn2.className = 'px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-yellow-400 text-yellow-400 bg-slate-800/50';
+                tabBtn1.className = 'px-5 py-3 text-xs font-bold rounded-t-xl transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+            }
+        }
+
+        function switchSubTab(tabName) {
+            state.activeSubTab = tabName;
+            const groupsView = document.getElementById('view-groups');
+            const bracketView = document.getElementById('view-bracket');
+            const btnGroups = document.getElementById('subtab-groups-btn');
+            const btnBracket = document.getElementById('subtab-bracket-btn');
+
+            if (tabName === 'groups') {
+                groupsView.classList.remove('hidden');
+                bracketView.classList.add('hidden');
+                btnGroups.className = 'px-4 py-2 text-xs font-bold rounded-lg transition bg-yellow-400 text-slate-950';
+                btnBracket.className = 'px-4 py-2 text-xs font-bold rounded-lg transition bg-slate-800 text-slate-300';
+            } else {
+                groupsView.classList.add('hidden');
+                bracketView.classList.remove('hidden');
+                btnBracket.className = 'px-4 py-2 text-xs font-bold rounded-lg transition bg-yellow-400 text-slate-950';
+                btnGroups.className = 'px-4 py-2 text-xs font-bold rounded-lg transition bg-slate-800 text-slate-300';
+            }
+        }
+
+        // --- TOURNAMENT GENERATION ENGINE ---
+        function generateTournament() {
+            if (state.participants.length < 2) {
+                showToast('Inserisci almeno 2 squadre per creare un torneo!', 'warning');
+                return;
+            }
+
+            state.champion = null;
+
+            if (state.format === 'elimination') {
+                document.getElementById('subtab-groups-btn').classList.add('hidden');
+                document.getElementById('qualifier-action-container').classList.add('hidden');
+                buildEliminationBracket(state.participants);
+                switchSubTab('bracket');
+            } else {
+                document.getElementById('subtab-groups-btn').classList.remove('hidden');
+                document.getElementById('qualifier-action-container').classList.remove('hidden');
+                buildGroups(state.participants);
+                switchSubTab('groups');
+            }
+
+            switchStep(2);
+            showToast('Torneo generato con successo!', 'success');
+        }
+
+        // --- GROUP STAGE LOGIC ---
+        function buildGroups(teams) {
+            const numG = state.numGroups;
+            state.groups = [];
+
+            for (let i = 0; i < numG; i++) {
+                state.groups.push({
+                    name: `Girone ${String.fromCharCode(65 + i)}`,
+                    teams: [],
+                    standings: [],
+                    matches: []
+                });
+            }
+
+            teams.forEach((t, idx) => {
+                state.groups[idx % numG].teams.push(t);
+            });
+
+            state.groups.forEach(g => {
+                g.standings = g.teams.map(t => ({
+                    name: t, pts: 0, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0
+                }));
+
+                const n = g.teams.length;
+                g.matches = [];
+                for (let i = 0; i < n; i++) {
+                    for (let j = i + 1; j < n; j++) {
+                        g.matches.push({
+                            id: `m_${g.name}_${i}_${j}`,
+                            team1: g.teams[i],
+                            team2: g.teams[j],
+                            score1: null,
+                            score2: null
+                        });
+                    }
+                }
+            });
+
+            renderGroups();
+        }
+
+        function renderGroups() {
+            const container = document.getElementById('groups-grid-container');
+            container.innerHTML = '';
+
+            state.groups.forEach((g, gIdx) => {
+                recalculateGroupStandings(g);
+
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4';
+
+                let standingsRows = g.standings.map((st, idx) => `
+                    <tr class="border-b border-slate-800/60 ${idx < state.advancingPerGroup ? 'bg-emerald-500/5' : ''}">
+                        <td class="py-2 px-3 text-xs font-bold ${idx < state.advancingPerGroup ? 'text-emerald-400' : 'text-slate-500'}">${idx + 1}</td>
+                        <td class="py-2 px-3 text-xs font-semibold text-slate-200">${escapeHtml(st.name)}</td>
+                        <td class="py-2 px-3 text-xs font-extrabold text-yellow-400 text-center">${st.pts}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.p}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.w}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.d}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.l}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.gf}:${st.ga}</td>
+                        <td class="py-2 px-3 text-xs text-slate-400 text-center">${st.gd >= 0 ? '+' + st.gd : st.gd}</td>
+                    </tr>
+                `).join('');
+
+                let matchesRows = g.matches.map((m, mIdx) => `
+                    <div class="flex items-center justify-between py-2 border-b border-slate-800/40 text-xs">
+                        <span class="w-5/12 text-right font-semibold text-slate-300 truncate">${escapeHtml(m.team1)}</span>
+                        <div class="flex items-center gap-1 px-2">
+                            <input type="number" min="0" value="${m.score1 !== null ? m.score1 : ''}" onchange="updateGroupScore(${gIdx}, ${mIdx}, 1, this.value)" class="w-10 bg-slate-950 border border-slate-700 rounded text-center text-xs py-1 text-white focus:outline-none focus:border-yellow-400">
+                            <span class="text-slate-600 font-bold">-</span>
+                            <input type="number" min="0" value="${m.score2 !== null ? m.score2 : ''}" onchange="updateGroupScore(${gIdx}, ${mIdx}, 2, this.value)" class="w-10 bg-slate-950 border border-slate-700 rounded text-center text-xs py-1 text-white focus:outline-none focus:border-yellow-400">
+                        </div>
+                        <span class="w-5/12 text-left font-semibold text-slate-300 truncate">${escapeHtml(m.team2)}</span>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h3 class="text-base font-bold text-yellow-400">${g.name}</h3>
+                        <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">Primi ${state.advancingPerGroup} Passano</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                                    <th class="py-1 px-3">#</th>
+                                    <th class="py-1 px-3">Squadra</th>
+                                    <th class="py-1 px-3 text-center">PT</th>
+                                    <th class="py-1 px-3 text-center">G</th>
+                                    <th class="py-1 px-3 text-center">V</th>
+                                    <th class="py-1 px-3 text-center">N</th>
+                                    <th class="py-1 px-3 text-center">P</th>
+                                    <th class="py-1 px-3 text-center">GOL</th>
+                                    <th class="py-1 px-3 text-center">DR</th>
+                                </tr>
+                            </thead>
+                            <tbody>${standingsRows}</tbody>
+                        </table>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800 space-y-1">
+                        <div class="text-[11px] font-bold uppercase text-slate-400 mb-2">Calendario Partite</div>
+                        ${matchesRows}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateGroupScore(gIdx, mIdx, teamNum, val) {
+            const score = val !== '' ? parseInt(val) : null;
+            if (teamNum === 1) state.groups[gIdx].matches[mIdx].score1 = score;
+            else state.groups[gIdx].matches[mIdx].score2 = score;
+            renderGroups();
+        }
+
+        function recalculateGroupStandings(group) {
+            group.standings.forEach(st => {
+                st.pts = 0; st.p = 0; st.w = 0; st.d = 0; st.l = 0; st.gf = 0; st.ga = 0; st.gd = 0;
+            });
+
+            group.matches.forEach(m => {
+                if (m.score1 !== null && m.score2 !== null) {
+                    const st1 = group.standings.find(s => s.name === m.team1);
+                    const st2 = group.standings.find(s => s.name === m.team2);
+
+                    if (st1 && st2) {
+                        st1.p++; st2.p++;
+                        st1.gf += m.score1; st1.ga += m.score2;
+                        st2.gf += m.score2; st2.ga += m.score1;
+
+                        if (m.score1 > m.score2) {
+                            st1.pts += 3; st1.w++; st2.l++;
+                        } else if (m.score2 > m.score1) {
+                            st2.pts += 3; st2.w++; st1.l++;
+                        } else {
+                            st1.pts += 1; st2.pts += 1;
+                            st1.d++; st2.d++;
+                        }
+                    }
+                }
+            });
+
+            group.standings.forEach(st => { st.gd = st.gf - st.ga; });
+
+            group.standings.sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                if (b.gd !== a.gd) return b.gd - a.gd;
+                return b.gf - a.gf;
+            });
+        }
+
+        function advanceGroupsToBracket() {
+            let qualifiers = [];
+            state.groups.forEach(g => {
+                for (let i = 0; i < state.advancingPerGroup; i++) {
+                    if (g.standings[i]) qualifiers.push(g.standings[i].name);
+                }
+            });
+
+            if (qualifiers.length < 2) {
+                showToast('Servono almeno 2 qualificati dai gironi per creare il tabellone!', 'warning');
+                return;
+            }
+
+            buildEliminationBracket(qualifiers);
+            switchSubTab('bracket');
+            showToast(`Qualificati ${qualifiers.length} club al tabellone finale!`, 'success');
+        }
+
+        // --- ELIMINATION BRACKET ENGINE ---
+        function buildEliminationBracket(teamsList) {
+            let count = teamsList.length;
+            let bracketSize = 2;
+            while (bracketSize < count) bracketSize *= 2;
+
+            let teams = [...teamsList];
+            while (teams.length < bracketSize) {
+                teams.push('BYE (Riposo)');
+            }
+
+            state.bracket = [];
+            let currentTeams = teams;
+            let roundNum = 1;
+
+            while (currentTeams.length >= 2) {
+                let roundName = getRoundName(currentTeams.length);
+                let matches = [];
+
+                for (let i = 0; i < currentTeams.length; i += 2) {
+                    let t1 = currentTeams[i];
+                    let t2 = currentTeams[i+1];
+                    let autoWinner = null;
+
+                    if (t1 === 'BYE (Riposo)' && t2 !== 'BYE (Riposo)') autoWinner = t2;
+                    else if (t2 === 'BYE (Riposo)' && t1 !== 'BYE (Riposo)') autoWinner = t1;
+
+                    matches.push({
+                        id: `r${roundNum}_m${i/2}`,
+                        team1: t1,
+                        team2: t2,
+                        score1: autoWinner ? (autoWinner === t1 ? 1 : 0) : null,
+                        score2: autoWinner ? (autoWinner === t2 ? 1 : 0) : null,
+                        winner: autoWinner
+                    });
+                }
+
+                state.bracket.push({
+                    name: roundName,
+                    matches: matches
+                });
+
+                currentTeams = matches.map(m => m.winner || 'TBD');
+                roundNum++;
+            }
+
+            renderBracket();
+        }
+
+        function getRoundName(teamCount) {
+            switch(teamCount) {
+                case 2: return "Finale";
+                case 4: return "Semifinali";
+                case 8: return "Quarti di Finale";
+                case 16: return "Ottavi di Finale";
+                case 32: return "Sedicesimi di Finale";
+                default: return `Turno (${teamCount} Squadre)`;
+            }
+        }
+
+        function renderBracket() {
+            const container = document.getElementById('bracket-container');
+            container.innerHTML = '';
+
+            state.bracket.forEach((round, rIdx) => {
+                const col = document.createElement('div');
+                col.className = 'flex-1 min-w-[220px] flex flex-col justify-around gap-4';
+
+                let matchesHTML = round.matches.map((m, mIdx) => {
+                    const isCompleted = m.winner !== null;
+                    const isBye = m.team1.includes('BYE') || m.team2.includes('BYE');
+
+                    return `
+                        <div class="bg-slate-900 border ${m.winner ? 'border-yellow-400/50 shadow-yellow-500/5' : 'border-slate-800'} rounded-xl p-3 shadow-lg space-y-2">
+                            <!-- Team 1 -->
+                            <div class="flex items-center justify-between p-1.5 rounded-lg ${m.winner === m.team1 ? 'bg-yellow-400/10 font-bold text-yellow-400' : 'bg-slate-950 text-slate-300'}">
+                                <span class="text-xs truncate max-w-[130px]">${escapeHtml(m.team1)}</span>
+                                <input type="number" min="0" value="${m.score1 !== null ? m.score1 : ''}" ${isBye ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, 1, this.value)" class="w-9 bg-slate-900 border border-slate-700 rounded text-center text-xs py-0.5 text-white focus:outline-none focus:border-yellow-400">
+                            </div>
+                            <!-- Team 2 -->
+                            <div class="flex items-center justify-between p-1.5 rounded-lg ${m.winner === m.team2 ? 'bg-yellow-400/10 font-bold text-yellow-400' : 'bg-slate-950 text-slate-300'}">
+                                <span class="text-xs truncate max-w-[130px]">${escapeHtml(m.team2)}</span>
+                                <input type="number" min="0" value="${m.score2 !== null ? m.score2 : ''}" ${isBye ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, 2, this.value)" class="w-9 bg-slate-900 border border-slate-700 rounded text-center text-xs py-0.5 text-white focus:outline-none focus:border-yellow-400">
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                col.innerHTML = `
+                    <div class="text-center font-bold text-xs uppercase tracking-wider text-yellow-400 bg-slate-900 border border-slate-800 py-2 rounded-xl">
+                        ${round.name}
+                    </div>
+                    <div class="flex flex-col justify-around flex-1 space-y-4">
+                        ${matchesHTML}
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+
+            // Champion Card
+            if (state.champion) {
+                const champCol = document.createElement('div');
+                champCol.className = 'flex-1 min-w-[200px] flex flex-col justify-center items-center';
+                champCol.innerHTML = `
+                    <div class="bg-gradient-to-b from-yellow-400/20 to-slate-900 border-2 border-yellow-400 rounded-2xl p-6 text-center space-y-3 shadow-2xl">
+                        <div class="text-4xl">🏆</div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-yellow-400">CAMPIONE DEL TORNEO</div>
+                        <div class="text-lg font-extrabold text-white font-display uppercase tracking-wider">${escapeHtml(state.champion)}</div>
+                    </div>
+                `;
+                container.appendChild(champCol);
+            }
+        }
+
+        function updateBracketScore(rIdx, mIdx, teamNum, val) {
+            const match = state.bracket[rIdx].matches[mIdx];
+            const score = val !== '' ? parseInt(val) : null;
+
+            if (teamNum === 1) match.score1 = score;
+            else match.score2 = score;
+
+            if (match.score1 !== null && match.score2 !== null) {
+                if (match.score1 > match.score2) match.winner = match.team1;
+                else if (match.score2 > match.score1) match.winner = match.team2;
+                else match.winner = match.score1 >= match.score2 ? match.team1 : match.team2;
+
+                propagateBracketWinner(rIdx, mIdx, match.winner);
+            }
+
+            renderBracket();
+        }
+
+        function propagateBracketWinner(rIdx, mIdx, winnerTeam) {
+            if (rIdx + 1 < state.bracket.length) {
+                const nextMatchIdx = Math.floor(mIdx / 2);
+                const isTeam1 = mIdx % 2 === 0;
+                const nextMatch = state.bracket[rIdx + 1].matches[nextMatchIdx];
+
+                if (isTeam1) nextMatch.team1 = winnerTeam;
+                else nextMatch.team2 = winnerTeam;
+            } else {
+                state.champion = winnerTeam;
+                triggerConfetti();
+                showToast(`🏆 CAMPIONE: ${winnerTeam.toUpperCase()}!`, 'success');
+            }
+        }
+
+        // --- UTILS & TOASTS ---
+        function resetAllData() {
+            state.participants = [];
+            state.bracket = [];
+            state.groups = [];
+            state.champion = null;
+            renderParticipants();
+            switchStep(1);
+            showToast("Tutti i dati sono stati resettati.", "info");
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-2xl transition-all duration-300 transform translate-y-2 pointer-events-auto border ${
+                type === 'success' ? 'bg-emerald-600 border-emerald-400' :
+                type === 'warning' ? 'bg-amber-600 border-amber-400' :
+                'bg-slate-800 border-slate-700'
+            }`;
+            toast.innerText = msg;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // --- EXPORT & DOWNLOAD HANDLERS ---
+        function exportTournamentJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            triggerDownload(dataStr, `Torneo_${new Date().toISOString().slice(0,10)}.json`);
+            showToast("Torneo esportato in formato JSON!", "success");
+        }
+
+        function exportTournamentCSV() {
+            let csvContent = "\uFEFF";
+            csvContent += "=== ELENCO PARTECIPANTI ===\nPosizione,Squadra\n";
+            state.participants.forEach((p, idx) => {
+                csvContent += `${idx + 1},"${p.replace(/"/g, '""')}"\n`;
+            });
+            csvContent += "\n";
+
+            if (state.groups && state.groups.length > 0) {
+                csvContent += "=== FASE A GIRONI - CLASSIFICHE ===\n";
+                state.groups.forEach(g => {
+                    csvContent += `\n${g.name}\nPos,Squadra,Punti,Partite,Vittorie,Pareggi,Sconfitte,Gol Fatti,Gol Subiti,Diff Rete\n`;
+                    g.standings.forEach((st, idx) => {
+                        csvContent += `${idx + 1},"${st.name.replace(/"/g, '""')}",${st.pts},${st.p},${st.w},${st.d},${st.l},${st.gf},${st.ga},${st.gd}\n`;
+                    });
+                });
+            }
+
+            const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+            triggerDownload(dataStr, `Torneo_${new Date().toISOString().slice(0,10)}.csv`);
+            showToast("Torneo esportato in formato CSV!", "success");
+        }
+
+        function exportTournamentTXT() {
+            let txt = "==================================================\n REPORT TORNEO \n==================================================\n";
+            txt += `Partecipanti (${state.participants.length}):\n`;
+            state.participants.forEach((p, idx) => { txt += `${idx + 1}. ${p}\n`; });
+            if (state.champion) txt += `\n🏆 CAMPIONE: ${state.champion.toUpperCase()}\n`;
+
+            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(txt);
+            triggerDownload(dataStr, `Report_Torneo_${new Date().toISOString().slice(0,10)}.txt`);
+            showToast("Report TXT scaricato!", "success");
+        }
+
+        function printTournamentPDF() {
+            window.print();
+        }
+
+        function triggerDownload(dataStr, filename) {
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        // --- CONFETTI EFFECT ---
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.8) * 16,
+                    color: ['#facc15', '#38bdf8', '#ef4444', '#10b981', '#a855f7'][Math.floor(Math.random() * 5)],
+                    size: 6 + Math.random() * 6,
+                    life: 100
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        alive = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.3;
+                        p.life--;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                    }
+                });
+                if (alive) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
